@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aurora · 3D Weather Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  :root{
+    --txt:#e9f0ff;
+    --dim:#8fa2c9;
+    --dim2:#6a7ea8;
+    --stroke:rgba(120,170,255,.14);
+    --glass:linear-gradient(180deg,rgba(18,26,45,.74),rgba(9,14,26,.68));
+    --accent:#6fb3ff;
+  }
+  html,body{height:100%;}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    color:var(--txt);
+    overflow:hidden;
+    background:radial-gradient(120% 90% at 50% 0%,#3f8fe0 0%,#14407a 45%,#050a18 100%);
+    transition:background 1.2s ease;
+    -webkit-font-smoothing:antialiased;
+  }
+  #scene{position:fixed;inset:0;display:block;z-index:0;}
+
+  #flash{
+    position:fixed;inset:0;background:#dceaff;opacity:0;
+    pointer-events:none;z-index:1;
+  }
+
+  .ui{position:fixed;inset:0;z-index:2;pointer-events:none;}
+  .ui *{pointer-events:none;}
+  .ui button,.ui input,.ui a,.panel,.ctrl,.city-item,.sr-item{pointer-events:auto;}
+
+  .panel{
+    background:var(--glass);
+    border:1px solid var(--stroke);
+    border-radius:20px;
+    backdrop-filter:blur(20px) saturate(150%);
+    -webkit-backdrop-filter:blur(20px) saturate(150%);
+    box-shadow:0 24px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+
+  /* ---------- LEFT COLUMN ---------- */
+  .left{
+    position:absolute;top:18px;left:18px;bottom:18px;width:312px;
+    display:flex;flex-direction:column;gap:12px;
+  }
+  .header{padding:16px 16px 14px;pointer-events:auto;}
+  .brand{display:flex;align-items:center;gap:11px;margin-bottom:14px;}
+  .logo{
+    width:38px;height:38px;border-radius:12px;flex:none;
+    background:linear-gradient(145deg,#3f8fe0,#8f5cff);
+    display:grid;place-items:center;font-size:19px;
+    box-shadow:0 6px 20px rgba(80,140,255,.4);
+  }
+  .brand h1{font-size:16px;font-weight:600;letter-spacing:.4px;}
+  .brand p{font-size:11px;color:var(--dim2);letter-spacing:.6px;text-transform:uppercase;margin-top:1px;}
+
+  .search{position:relative;}
+  .search input{
+    width:100%;padding:11px 40px 11px 14px;border-radius:12px;
+    background:rgba(255,255,255,.055);
+    border:1px solid rgba(140,180,255,.15);
+    color:var(--txt);font-size:13px;font-family:inherit;outline:none;
+    transition:.2s;
+  }
+  .search input::placeholder{color:var(--dim2);}
+  .search input:focus{
+    border-color:rgba(110,175,255,.55);
+    background:rgba(110,175,255,.09);
+    box-shadow:0 0 0 3px rgba(90,150,255,.12);
+  }
+  .search button{
+    position:absolute;right:5px;top:50%;transform:translateY(-50%);
+    width:30px;height:30px;border-radius:9px;border:none;cursor:pointer;
+    background:rgba(110,175,255,.16);color:var(--accent);font-size:15px;
+    display:grid;place-items:center;transition:.2s;
+  }
+  .search button:hover{background:rgba(110,175,255,.32);}
+
+  .search-results{
+    position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:50;
+    background:rgba(12,19,35,.96);
+    border:1px solid var(--stroke);border-radius:14px;
+    backdrop-filter:blur(20px);overflow:hidden;
+    box-shadow:0 20px 50px rgba(0,0,0,.6);
+    display:none;max-height:250px;overflow-y:auto;
+  }
+  .search-results.show{display:block;}
+  .sr-item{
+    padding:10px 14px;cursor:pointer;font-size:13px;
+    display:flex;justify-content:space-between;gap:10px;align-items:center;
+    transition:.15s;border-bottom:1px solid rgba(255,255,255,.04);
+  }
+  .sr-item:last-child{border-bottom:none;}
+  .sr-item:hover{background:rgba(110,175,255,.14);}
+  .sr-item .sr-sub{color:var(--dim2);font-size:11px;}
+
+  .cities{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+  .panel-title{
+    padding:14px 16px 10px;font-size:10.5px;letter-spacing:1.3px;
+    text-transform:uppercase;color:var(--dim2);font-weight:600;
+    display:flex;justify-content:space-between;
+  }
+  .cities-scroll{overflow-y:auto;padding:0 8px 10px;flex:1;}
+  .cities-scroll::-webkit-scrollbar,.detail::-webkit-scrollbar,.search-results::-webkit-scrollbar{width:6px;}
+  .cities-scroll::-webkit-scrollbar-thumb,.detail::-webkit-scrollbar-thumb,.search-results::-webkit-scrollbar-thumb{
+    background:rgba(120,170,255,.22);border-radius:3px;
+  }
+
+  .city-item{
+    width:100%;display:flex;align-items:center;gap:11px;
+    padding:10px 11px;border-radius:13px;cursor:pointer;
+    background:transparent;border:1px solid transparent;
+    color:inherit;font-family:inherit;text-align:left;
+    transition:.18s;margin-bottom:2px;
+  }
+  .city-item:hover{background:rgba(110,175,255,.09);}
+  .city-item.active{
+    background:linear-gradient(90deg,rgba(110,175,255,.20),rgba(110,175,255,.05));
+    border-color:rgba(120,175,255,.35);
+    box-shadow:0 0 22px rgba(80,150,255,.14);
+  }
+  .ci-icon{font-size:21px;width:26px;text-align:center;flex:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));}
+  .ci-main{flex:1;min-width:0;}
+  .ci-name{display:block;font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ci-cond{display:block;font-size:11px;color:var(--dim2);margin-top:2px;}
+  .ci-temp{font-size:16px;font-weight:600;letter-spacing:-.5px;flex:none;}
+
+  .skeleton{
+    height:52px;border-radius:13px;margin-bottom:6px;
+    background:linear-gradient(90deg,rgba(255,255,255,.045),rgba(255,255,255,.09),rgba(255,255,255,.045));
+    background-size:200% 100%;animation:sk 1.4s infinite;
+  }
+  @keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  /* ---------- DETAIL PANEL ---------- */
+  .detail{
+    position:absolute;top:18px;right:18px;width:344px;
+    max-height:calc(100% - 36px);overflow-y:auto;
+    padding:20px;
+  }
+  .d-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .d-head h2{font-size:19px;font-weight:600;letter-spacing:-.2px;line-height:1.2;}
+  .d-head p{font-size:11.5px;color:var(--dim2);margin-top:4px;}
+  .d-icon{font-size:38px;line-height:1;filter:drop-shadow(0 4px 14px rgba(0,0,0,.55));}
+  .d-temp{
+    font-size:64px;font-weight:200;letter-spacing:-4px;line-height:1;
+    margin:18px 0 6px;display:flex;align-items:flex-start;
+  }
+  .d-temp span{font-size:22px;font-weight:400;letter-spacing:0;margin-top:8px;margin-left:2px;color:var(--dim);}
+  .d-cond{font-size:13.5px;color:var(--dim);margin-bottom:18px;}
+  .d-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;}
+  .d-stat{
+    background:rgba(255,255,255,.045);
+    border:1px solid rgba(140,180,255,.09);
+    border-radius:12px;padding:10px 12px;
+  }
+  .d-stat span{display:block;font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--dim2);margin-bottom:5px;}
+  .d-stat strong{font-size:14px;font-weight:500;}
+  .d-sec-title{font-size:10.5px;letter-spacing:1.3px;text-transform:uppercase;color:var(--dim2);font-weight:600;margin-bottom:10px;}
+
+  .fc{display:grid;grid-template-columns:44px 26px 1fr;gap:10px;align-items:center;padding:6px 0;}
+  .fc-d{font-size:12px;color:var(--dim);}
+  .fc-i{font-size:15px;text-align:center;}
+  .fc-right{display:flex;flex-direction:column;gap:3px;}
+  .fc-temps{display:flex;justify-content:space-between;font-size:11.5px;}
+  .fc-temps b{font-weight:500;}
+  .fc-temps i{font-style:normal;color:var(--dim2);}
+  .fc-bar{position:relative;height:4px;border-radius:2px;background:rgba(255,255,255,.09);}
+  .fc-bar i{position:absolute;top:0;bottom:0;border-radius:2px;background:linear-gradient(90deg,#4aa3ff,#7ee0c0,#ffd166,#ff7a5c);}
+
+  .empty{padding:30px 6px;text-align:center;color:var(--dim2);font-size:13px;line-height:1.7;}
+
+  /* ---------- CONTROLS ---------- */
+  .controls-bar{
+    position:absolute;bottom:22px;left:50%;transform:translateX(-50%);
+    display:flex;gap:8px;
+  }
+  .ctrl{
+    padding:9px 16px;border-radius:12px;cursor:pointer;
+    background:rgba(14,21,38,.78);border:1px solid var(--stroke);
+    color:var(--dim);font-size:12px;font-family:inherit;font-weight:500;
+    backdrop-filter:blur(16px);transition:.2s;
+    display:flex;align-items:center;gap:7px;
+  }
+  .ctrl:hover{color:var(--txt);border-color:rgba(120,175,255,.4);background:rgba(30,45,75,.85);}
+  .ctrl.active{color:var(--accent);border-color:rgba(110,175,255,.5);background:rgba(60,110,190,.22);}
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width:880px){
+    .left{top:12px;left:12px;right:12px;bottom:auto;width:auto;}
+    .header{padding:12px 12px 11px;}
+    .brand{margin-bottom:10px;}
+    .cities{max-height:none;}
+    .cities-scroll{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 8px 10px;}
+    .city-item{min-width:158px;width:auto;flex:none;margin-bottom:0;}
+    .skeleton{min-width:158px;width:158px;height:52px;margin-bottom:0;}
+    .detail{
+      top:auto;bottom:12px;left:12px;right:12px;width:auto;
+      max-height:46vh;padding:16px;
+    }
+    .d-temp{font-size:48px;margin:10px 0 4px;}
+    .d-icon{font-size:30px;}
+    .controls-bar{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+<div id="flash"></div>
+
+<div class="ui">
+  <div class="left">
+    <div class="panel header">
+      <div class="brand">
+        <div class="logo">◈</div>
+        <div>
+          <h1>Aurora</h1>
+          <p>3D Weather Explorer</p>
+        </div>
+      </div>
+      <form class="search" id="searchForm" autocomplete="off">
+        <input id="searchInput" type="text" placeholder="Search any city on Earth…" />
+        <button type="submit" aria-label="Search">⌕</button>
+        <div class="search-results" id="searchResults"></div>
+      </form>
+    </div>
+
+    <div class="panel cities">
+      <div class="panel-title"><span>Places</span><span id="cityCount"></span></div>
+      <div class="cities-scroll" id="cityList"></div>
+    </div>
+  </div>
+
+  <section class="panel detail" id="detail">
+    <div class="empty">Loading the planet…</div>
+  </section>
+
+  <div class="controls-bar">
+    <button class="ctrl active" id="spinBtn">⟳ Spin</button>
+    <button class="ctrl" id="resetBtn">⤾ Reset view</button>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* =========================================================
+   CONSTANTS & DATA
+   ========================================================= */
+const R = 2;                     // globe radius
+const DEG = Math.PI / 180;
+
+const DEFAULT_CITIES = [
+  { name:'London',       country:'United Kingdom', lat: 51.5074, lon:  -0.1278 },
+  { name:'New York',     country:'United States',  lat: 40.7128, lon: -74.0060 },
+  { name:'Tokyo',        country:'Japan',          lat: 35.6762, lon: 139.6503 },
+  { name:'Sydney',       country:'Australia',      lat:-33.8688, lon: 151.2093 },
+  { name:'Dubai',        country:'United Arab Em.',lat: 25.2048, lon:  55.2708 },
+  { name:'Reykjavík',    country:'Iceland',        lat: 64.1466, lon: -21.9426 },
+  { name:'Cape Town',    country:'South Africa',   lat:-33.9249, lon:  18.4241 },
+  { name:'Rio de Janeiro',country:'Brazil',        lat:-22.9068, lon: -43.1729 },
+];
+
+const PALETTES = {
+  clear:  { day:'radial-gradient(120% 90% at 50% 0%, #3f8fe0 0%, #14407a 45%, #050a18 100%)',
+            night:'radial-gradient(120% 90% at 50% 0%, #24386f 0%, #0b1330 45%, #03050c 100%)' },
+  partly: { day:'radial-gradient(120% 90% at 50% 0%, #4b8bc4 0%, #1c3c66 45%, #05080f 100%)',
+            night:'radial-gradient(120% 90% at 50% 0%, #1f2b52 0%, #0a1128 45%, #03050c 100%)' },
+  cloudy: { day:'radial-gradient(120% 90% at 50% 0%, #5c6f88 0%, #232c3d 45%, #05070f 100%)',
+            night:'radial-gradient(120% 90% at 50% 0%, #2b3448 0%, #121826 45%, #04060b 100%)' },
+  rain:   { day:'radial-gradient(120% 90% at 50% 0%, #3b5068 0%, #17212f 45%, #04060b 100%)',
+            night:'radial-gradient(120% 90% at 50% 0%, #22303f 0%, #0d141d 45%, #030508 100%)' },
+  snow:   { day:'radial-gradient(120% 90% at 50% 0%, #6b83a3 0%, #2c3849 45%, #060810 100%)',
+            night:'radial-gradient(120% 90% at 50% 0%, #35455e 0%, #161e2c 45%, #04060c 100%)' },
+  storm:  { day:'radial-gradient(120% 90% at 50% 0%, #4a3f66 0%, #1d1636 45%, #04030a 100%)',
+            night:'radial-gradient(120% 90% at 50% 0%, #2c2347 0%, #130e26 45%, #030208 100%)' },
+  fog:    { day:'radial-gradient(120% 90% at 50% 0%, #6a7688 0%, #2d3542 45%, #07090e 100%)',
+            night:'radial-gradient(120% 90% at 50% 0%, #333c4b 0%, #151a23 45%, #05070a 100%)' },
+};
+
+/* =========================================================
+   WEATHER CODE MAPPING
+   ========================================================= */
+function describe(code){
+  if (code === 0)                    return { label:'Clear sky',      icon:'☀️', kind:'clear'  };
+  if (code === 1)                    return { label:'Mainly clear',   icon:'🌤️', kind:'partly' };
+  if (code === 2)                    return { label:'Partly cloudy',  icon:'⛅', kind:'partly' };
+  if (code === 3)                    return { label:'Overcast',       icon:'☁️', kind:'cloudy' };
+  if (code === 45 || code === 48)    return { label:'Foggy',          icon:'🌫️', kind:'fog'    };
+  if (code >= 51 && code <= 55)      return { label:'Drizzle',        icon:'🌦️', kind:'rain'   };
+  if (code === 56 || code === 57)    return { label:'Freezing drizzle',icon:'🌧️',kind:'rain'  };
+  if (code >= 61 && code <= 65)      return { label:'Rain',           icon:'🌧️', kind:'rain'   };
+  if (code === 66 || code === 67)    return { label:'Freezing rain',  icon:'🌧️', kind:'rain'   };
+  if (code >= 71 && code <= 75)      return { label:'Snowfall',       icon:'❄️', kind:'snow'   };
+  if (code === 77)                   return { label:'Snow grains',    icon:'🌨️', kind:'snow'   };
+  if (code >= 80 && code <= 82)      return { label:'Rain showers',   icon:'🌧️', kind:'rain'   };
+  if (code === 85 || code === 86)    return { label:'Snow showers',   icon:'🌨️', kind:'snow'   };
+  if (code >= 95)                    return { label:'Thunderstorm',   icon:'⛈️', kind:'storm'  };
+  return { label:'Unknown', icon:'🌡️', kind:'clear' };
+}
+
+function tempColor(t){
+  const hue = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(t, -20, 40, 0.62, 0.0), 0, 0.62);
+  return new THREE.Color().setHSL(hue, 0.92, 0.62);
+}
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+/* =========================================================
+   THREE.JS SCENE
+   ========================================================= */
+const canvas   = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 600);
+camera.position.set(0, 2.4, 7.4);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping  = true;
+controls.dampingFactor  = 0.07;
+controls.rotateSpeed    = 0.55;
+controls.zoomSpeed      = 0.7;
+controls.enablePan      = false;
+controls.minDistance    = 3.6;
+controls.maxDistance    = 14;
+controls.minPolarAngle  = 0.12;
+controls.maxPolarAngle  = Math.PI - 0.12;
+
+/* ---------- Globe ---------- */
+const globeGroup = new THREE.Group();
+scene.add(globeGroup);
+
+// Solid core
+globeGroup.add(new THREE.Mesh(
+  new THREE.SphereGeometry(R * 0.995, 64, 48),
+  new THREE.MeshBasicMaterial({ color:0x081428 })
+));
+
+// Wireframe grid
+globeGroup.add(new THREE.Mesh(
+  new THREE.SphereGeometry(R * 1.003, 48, 32),
+  new THREE.MeshBasicMaterial({ color:0x2f6fb0, wireframe:true, transparent:true, opacity:0.15 })
+));
+
+// Fibonacci dot shell
+(function buildDots(){
+  const COUNT = 2600;
+  const pos = new Float32Array(COUNT * 3);
+  const golden = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < COUNT; i++){
+    const y = 1 - (i / (COUNT - 1)) * 2;
+    const r = Math.sqrt(Math.max(0, 1 - y*y));
+    const th = golden * i;
+    pos[i*3    ] = Math.cos(th) * r * R * 1.008;
+    pos[i*3 + 1] = y * R * 1.008;
+    pos[i*3 + 2] = Math.sin(th) * r * R * 1.008;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  globeGroup.add(new THREE.Points(g, new THREE.PointsMaterial({
+    color:0x4f9fe0, size:0.021, transparent:true, opacity:0.68,
+    blending:THREE.AdditiveBlending, depthWrite:false
+  })));
+})();
+
+// Atmosphere glow
+const atmosphere = new THREE.Mesh(
+  new THREE.SphereGeometry(R * 1.38, 48, 32),
+  new THREE.ShaderMaterial({
+    uniforms:{ uColor:{ value:new THREE.Color(0x3d8bff) } },
+    vertexShader:`
+      varying vec3 vNormal;
+      void main(){
+        vNormal = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader:`
+      uniform vec3 uColor;
+      varying vec3 vNormal;
+      void main(){
+        float d = dot(vNormal, vec3(0.0, 0.0, 1.0));
+        float i = smoothstep(0.0, -0.9, d);
+        i = pow(i, 2.0) * 0.85;
+        gl_FragColor = vec4(uColor, 1.0) * i;
+      }`,
+    blending:THREE.AdditiveBlending,
+    side:THREE.BackSide,
+    transparent:true,
+    depthWrite:false
+  })
+);
+scene.add(atmosphere);
+
+/* ---------- Stars ---------- */
+const starMat = new THREE.PointsMaterial({
+  color:0xffffff, size:0.55, transparent:true, opacity:0.55,
+  blending:THREE.AdditiveBlending, depthWrite:false, sizeAttenuation:true
+});
+(function buildStars(){
+  const COUNT = 1000;
+  const pos = new Float32Array(COUNT * 3);
+  const v = new THREE.Vector3();
+  for (let i = 0; i < COUNT; i++){
+    v.randomDirection().multiplyScalar(70 + Math.random() * 90);
+    pos[i*3] = v.x; pos[i*3+1] = v.y; pos[i*3+2] = v.z;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  scene.add(new THREE.Points(g, starMat));
+})();
+
+/* ---------- Sun & Moon ---------- */
+function glowTexture(inner, mid){
+  const s = 256;
+  const c = document.createElement('canvas');
+  c.width = c.height = s;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(s/2, s/2, 0, s/2, s/2, s/2);
+  g.addColorStop(0,    inner);
+  g.addColorStop(0.22, mid);
+  g.addColorStop(1,    'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, s, s);
+  return new THREE.CanvasTexture(c);
+}
+
+const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: glowTexture('rgba(255,250,220,1)', 'rgba(255,200,110,0.55)'),
+  transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:0.95
+}));
+sunSprite.position.set(22, 14, -34);
+sunSprite.scale.setScalar(26);
+scene.add(sunSprite);
+
+const moonSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: glowTexture('rgba(230,240,255,1)', 'rgba(150,185,255,0.35)'),
+  transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:0.85
+}));
+moonSprite.position.set(-24, 15, -34);
+moonSprite.scale.setScalar(18);
+moonSprite.visible = false;
+scene.add(moonSprite);
+
+/* ---------- Clouds ---------- */
+function cloudTexture(){
+  const s = 256;
+  const c = document.createElement('canvas');
+  c.width = c.height = s;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(s/2, s/2, 0, s/2, s/2, s/2);
+  g.addColorStop(0,   'rgba(255,255,255,0.85)');
+  g.addColorStop(0.45,'rgba(255,255,255,0.28)');
+  g.addColorStop(1,   'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, s, s);
+  return new THREE.CanvasTexture(c);
+}
+
+const cloudGroup = new THREE.Group();
+scene.add(cloudGroup);
+const cloudSprites = [];
+(function buildClouds(){
+  const tex = cloudTexture();
+  for (let i = 0; i < 18; i++){
+    const mat = new THREE.SpriteMaterial({
+      map: tex, transparent:true, opacity:0, depthWrite:false,
+      color:0xcfe0f5, blending:THREE.NormalBlending
+    });
+    const spr = new THREE.Sprite(mat);
+    const dir = new THREE.Vector3().randomDirection();
+    dir.y *= 0.5;
+    dir.normalize().multiplyScalar(3.6 + Math.random() * 2.8);
+    spr.position.copy(dir);
+    const s = 2.8 + Math.random() * 3.4;
+    spr.scale.set(s, s * 0.6, 1);
+    spr.userData.base = 0.55 + Math.random() * 0.45;
+    cloudGroup.add(spr);
+    cloudSprites.push(spr);
+  }
+})();
+
+/* ---------- Rain ---------- */
+const RAIN_COUNT = 950;
+const RAIN_SPREAD = 11;
+const RAIN_TOP = 12, RAIN_BOTTOM = -11;
+
+const rainPos = new Float32Array(RAIN_COUNT * 6);
+const rainVel = new Float32Array(RAIN_COUNT);
+
+function resetDrop(i, anywhere){
+  const x = (Math.random() - 0.5) * RAIN_SPREAD * 2;
+  const z = (Math.random() - 0.5) * RAIN_SPREAD * 2;
+  const y = anywhere
+    ? RAIN_BOTTOM + Math.random() * (RAIN_TOP - RAIN_BOTTOM)
+    : RAIN_TOP + Math.random() * 2;
+  const len = 0.3 + Math.random() * 0.5;
+  rainPos[i*6    ] = x; rainPos[i*6 + 1] = y;       rainPos[i*6 + 2] = z;
+  rainPos[i*6 + 3] = x; rainPos[i*6 + 4] = y - len; rainPos[i*6 + 5] = z;
+  rainVel[i] = 17 + Math.random() * 13;
+}
+for (let i = 0; i < RAIN_COUNT; i++) resetDrop(i, true);
+
+const rainGeo = new THREE.BufferGeometry();
+rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+const rain = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({
+  color:0xaad4ff, transparent:true, opacity:0.5,
+  blending:THREE.AdditiveBlending, depthWrite:false
+}));
+rain.frustumCulled = false;
+rain.visible = false;
+scene.add(rain);
+
+/* ---------- Snow ---------- */
+const SNOW_COUNT = 750;
+const snowData = [];
+const snowPos = new Float32Array(SNOW_COUNT * 3);
+
+for (let i = 0; i < SNOW_COUNT; i++){
+  snowData.push({
+    x: (Math.random() - 0.5) * 24,
+    y: RAIN_BOTTOM + Math.random() * (RAIN_TOP - RAIN_BOTTOM),
+    z: (Math.random() - 0.5) * 24,
+    vy: 0.7 + Math.random() * 1.3,
+    ph: Math.random() * Math.PI * 2,
+    amp: 0.25 + Math.random() * 0.5
+  });
+  snowPos[i*3] = snowData[i].x;
+  snowPos[i*3+1] = snowData[i].y;
+  snowPos[i*3+2] = snowData[i].z;
+}
+
+const snowGeo = new THREE.BufferGeometry();
+snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
+
+const snowTex = (() => {
+  const s = 64;
+  const c = document.createElement('canvas');
+  c.width = c.height = s;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(s/2, s/2, 0, s/2, s/2, s/2);
+  g.addColorStop(0,   'rgba(255,255,255,1)');
+  g.addColorStop(0.3, 'rgba(255,255,255,0.75)');
+  g.addColorStop(1,   'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, s, s);
+  return new THREE.CanvasTexture(c);
+})();
+
+const snow = new THREE.Points(snowGeo, new THREE.PointsMaterial({
+  size:0.14, map:snowTex, transparent:true, opacity:0.9,
+  depthWrite:false, sizeAttenuation:true
+}));
+snow.frustumCulled = false;
+snow.visible = false;
+scene.add(snow);
+
+/* ---------- Markers ---------- */
+const markers = [];
+const hitMeshes = [];
+
+function latLonToVec3(lat, lon, r){
+  const la = lat * DEG, lo = lon * DEG;
+  return new THREE.Vector3(
+    r * Math.cos(la) * Math.sin(lo),
+    r * Math.sin(la),
+    r * Math.cos(la) * Math.cos(lo)
+  );
+}
+
+function createMarker(city){
+  const group = new THREE.Group();
+  const pos = latLonToVec3(city.lat, city.lon, R * 1.008);
+  group.position.copy(pos);
+  group.lookAt(pos.clone().multiplyScalar(2));
+
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.055, 0.088, 28),
+    new THREE.MeshBasicMaterial({
+      color:0xffffff, transparent:true, opacity:0.55, side:THREE.DoubleSide,
+      depthWrite:false, blending:THREE.AdditiveBlending
+    })
+  );
+  ring.position.z = 0.012;
+  group.add(ring);
+
+  const dot = new THREE.Mesh(
+    new THREE.SphereGeometry(0.033, 12, 12),
+    new THREE.MeshBasicMaterial({ color:0xffffff })
+  );
+  dot.position.z = 0.03;
+  group.add(dot);
+
+  const hit = new THREE.Mesh(
+    new THREE.SphereGeometry(0.16, 8, 8),
+    new THREE.MeshBasicMaterial({ transparent:true, opacity:0, depthWrite:false })
+  );
+  hit.position.z = 0.05;
+  hit.userData.cityId = city.id;
+  group.add(hit);
+  hitMeshes.push(hit);
+
+  globeGroup.add(group);
+  const m = { group, ring, dot, hit, cityId: city.id };
+  markers.push(m);
+  return m;
+}
+
+/* =========================================================
+   WEATHER STATE → SCENE
+   ========================================================= */
+let cloudTarget   = 0;
+let stormActive   = false;
+let flashLevel    = 0;
+let currentKind   = 'clear';
+
+function applyWeatherToScene(city){
+  const w = city?.weather;
+  if (!w || !w.current) return;
+
+  const info  = describe(w.current.weather_code);
+  const isDay = w.current.is_day === 1;
+  currentKind = info.kind;
+
+  // Background
+  const pal = PALETTES[info.kind] || PALETTES.clear;
+  document.body.style.background = isDay ? pal.day : pal.night;
+
+  // Particles
+  const isRain  = info.kind === 'rain' || info.kind === 'storm';
+  const isSnow  = info.kind === 'snow';
+
+  rain.visible = isRain;
+  rain.material.opacity = info.kind === 'storm' ? 0.72 : 0.45;
+
+  snow.visible = isSnow;
+
+  // Clouds
+  const cloudyKinds = ['partly','cloudy','rain','snow','storm','fog'];
+  cloudGroup.visible = cloudyKinds.includes(info.kind);
+  cloudTarget =
+      info.kind === 'partly' ? 0.32
+    : info.kind === 'cloudy' ? 0.82
+    : info.kind === 'fog'    ? 0.9
+    : 0.62;
+
+  // Sky objects
+  sunSprite.visible  = isDay  && (info.kind === 'clear' || info.kind === 'partly');
+  moonSprite.visible = !isDay && (info.kind === 'clear' || info.kind === 'partly');
+
+  starMat.opacity = isDay ? 0.22 : 0.85;
+
+  // Atmosphere tint
+  atmosphere.material.uniforms.uColor.value.set(
+      info.kind === 'storm' ? 0x8a5cff
+    : isDay                 ? 0x3d8bff
+    :                         0x2a5cc4
+  );
+
+  stormActive = info.kind === 'storm';
+}
+
+/* =========================================================
+   ANIMATION
+   ========================================================= */
+const clock = new THREE.Clock();
+const flashEl = document.getElementById('flash');
+
+let spinning = true;
+let focusTween = null;
+
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+
+function animate(){
+  requestAnimationFrame(animate);
+
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t  = clock.elapsedTime;
+
+  /* --- globe rotation / camera focus --- */
+  if (focusTween){
+    focusTween.t += dt;
+    const k = Math.min(focusTween.t / 1.15, 1);
+    const e = k < 0.5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2) / 2;
+    globeGroup.rotation.y = focusTween.rot0 + (focusTween.rot1 - focusTween.rot0) * e;
+    camera.position.lerpVectors(focusTween.cam0, focusTween.cam1, e);
+    if (k >= 1) focusTween = null;
+  } else if (spinning){
+    globeGroup.rotation.y += dt * 0.055;
+  }
+
+  /* --- marker pulse --- */
+  for (let i = 0; i < markers.length; i++){
+    const m = markers[i];
+    const s = 1 + Math.sin(t * 2.1 + i * 0.8) * 0.14;
+    m.ring.scale.setScalar(s);
+    const active = state.selected === m.cityId;
+    m.ring.material.opacity = (active ? 0.85 : 0.42) - Math.sin(t * 2.1 + i * 0.8) * 0.16;
+    m.dot.scale.setScalar(active ? 1.35 : 1);
+  }
+
+  /* --- clouds --- */
+  cloudGroup.rotation.y += dt * 0.022;
+  for (const spr of cloudSprites){
+    const target = cloudTarget * spr.userData.base;
+    spr.material.opacity += (target - spr.material.opacity) * Math.min(dt * 2.4, 1);
+  }
+
+  /* --- rain --- */
+  if (rain.visible){
+    for (let i = 0; i < RAIN_COUNT; i++){
+      const dy = rainVel[i] * dt;
+      rainPos[i*6 + 1] -= dy;
+      rainPos[i*6 + 4] -= dy;
+      if (rainPos[i*6 + 4] < RAIN_BOTTOM) resetDrop(i, false);
+    }
+    rainGeo.attributes.position.needsUpdate = true;
+  }
+
+  /* --- snow --- */
+  if (snow.visible){
+    for (let i = 0; i < SNOW_COUNT; i++){
+      const d = snowData[i];
+      d.y -= d.vy * dt;
+      const x = d.x + Math.sin(t * 0.7 + d.ph) * d.amp;
+      const z = d.z + Math.cos(t * 0.5 + d.ph) * d.amp;
+      if (d.y < RAIN_BOTTOM){ d.y = RAIN_TOP + Math.random() * 2; }
+      snowPos[i*3]     = x;
+      snowPos[i*3 + 1] = d.y;
+      snowPos[i*3 + 2] = z;
+    }
+    snowGeo.attributes.position.needsUpdate = true;
+  }
+
+  /* --- lightning --- */
+  if (stormActive && Math.random() < dt * 0.42) flashLevel = 1;
+  if (flashLevel > 0){
+    flashLevel = Math.max(0, flashLevel - dt * 2.6);
+    flashEl.style.opacity = (flashLevel * 0.5).toFixed(3);
+  } else if (flashEl.style.opacity !== '0'){
+    flashEl.style.opacity = '0';
+  }
+
+  /* --- stars twinkle --- */
+  starMat.opacity += ((currentKind === 'clear' ? 1 : 0.6) * (moonSprite.visible ? 0.85 : 0.22) - starMat.opacity) * dt * 0.8;
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+/* =========================================================
+   UI STATE & RENDERING
+   ========================================================= */
+const state = {
+  cities: [],
+  selected: null,
+  nextId: 0,
+};
+
+const cityListEl   = document.getElementById('cityList');
+const cityCountEl  = document.getElementById('cityCount');
+const detailEl     = document.getElementById('detail');
+const searchForm   = document.getElementById('searchForm');
+const searchInput  = document.getElementById('searchInput');
+const searchResEl  = document.getElementById('searchResults');
+
+function renderCityList(){
+  cityCountEl.textContent = state.cities.length;
+
+  if (!state.cities.length){
+    cityListEl.innerHTML = '<div class="empty">No places yet.</div>';
+    return;
+  }
+
+  cityListEl.innerHTML = state.cities.map(c => {
+    const w = c.weather;
+    const info = w ? describe(w.current.weather_code) : null;
+    const temp = w ? Math.round(w.current.temperature_2m) : null;
+    const active = state.selected === c.id ? ' active' : '';
+    return `
+      <button class="city-item${active}" data-id="${c.id}">
+        <span class="ci-icon">${info ? info.icon : '⏳'}</span>
+        <span class="ci-main">
+          <span class="ci-name">${esc(c.name)}</span>
+          <span class="ci-cond">${info ? esc(info.label) : (c.error ? 'Unavailable' : 'Loading…')}</span>
+        </span>
+        <span class="ci-temp">${temp !== null ? temp + '°' : '—'}</span>
+      </button>`;
+  }).join('');
+}
+
+function renderDetail(){
+  const city = state.cities.find(c => c.id === state.selected);
+
+  if (!city){
+    detailEl.innerHTML = `<div class="empty">Select a place on the globe<br>or from the list to see its weather.</div>`;
+    return;
+  }
+
+  if (city.error){
+    detailEl.innerHTML = `<div class="empty"><strong>${esc(city.name)}</strong><br>Could not load weather data.<br><small>${esc(city.error)}</small></div>`;
+    return;
+  }
+
+  if (!city.weather){
+    detailEl.innerHTML = `<div class="empty">Loading ${esc(city.name)}…</div>`;
+    return;
+  }
+
+  const w    = city.weather;
+  const cur  = w.current;
+  const info = describe(cur.weather_code);
+  const localTime = (cur.time || '').split('T')[1] || '--:--';
+
+  // Daily forecast
+  const daily = w.daily;
+  const days  = daily.time.map((d, i) => ({
+    date: d,
+    code: daily.weather_code[i],
+    max: daily.temperature_2m_max[i],
+    min: daily.temperature_2m_min[i],
+  })).slice(0, 6);
+
+  const globalMin = Math.min(...days.map(d => d.min));
+  const globalMax = Math.max(...days.map(d => d.max));
+  const range = Math.max(globalMax - globalMin, 1);
+
+  const fcHTML = days.map((d, i) => {
+    const di = describe(d.code);
+    const label = i === 0 ? 'Today'
+      : new Date(d.date + 'T12:00:00').toLocaleDateString(undefined, { weekday:'short' });
+    const left  = ((d.min - globalMin) / range) * 100;
+    const width = Math.max(((d.max - d.min) / range) * 100, 6);
+    return `
+      <div class="fc">
+        <span class="fc-d">${label}</span>
+        <span class="fc-i">${di.icon}</span>
+        <div class="fc-right">
+          <div class="fc-temps"><i>${Math.round(d.min)}°</i><b>${Math.round(d.max)}°</b></div>
+          <div class="fc-bar"><i style="left:${left}%;width:${width}%"></i></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const windDir = cur.wind_direction_10m ?? 0;
+  const dirName = ['N','NE','E','SE','S','SW','W','NW'][Math.round(windDir / 45) % 8];
+
+  detailEl.innerHTML = `
+    <div class="d-head">
+      <div>
+        <h2>${esc(city.name)}</h2>
+        <p>${esc(city.country || '')} · ${localTime} local</p>
+      </div>
+      <div class="d-icon">${info.icon}</div>
+    </div>
+
+    <div class="d-temp">${Math.round(cur.temperature_2m)}<span>°C</span></div>
+    <div class="d-cond">${esc(info.label)} · Feels like ${Math.round(cur.apparent_temperature)}°</div>
+
+    <div class="d-grid">
+      <div class="d-stat"><span>Wind</span><strong>${Math.round(cur.wind_speed_10m)} km/h ${dirName}</strong></div>
+      <div class="d-stat"><span>Humidity</span><strong>${cur.relative_humidity_2m}%</strong></div>
+      <div class="d-stat"><span>Pressure</span><strong>${Math.round(cur.pressure_msl)} hPa</strong></div>
+      <div class="d-stat"><span>Precipitation</span><strong>${cur.precipitation ?? 0} mm</strong></div>
+    </div>
+
+    <div class="d-sec-title">6-Day Forecast</div>
+    ${fcHTML}
+  `;
+}
+
+/* =========================================================
+   CITY SELECTION & FOCUS
+   ========================================================= */
+function focusCity(city){
+  const latRad = city.lat * DEG;
+  const lonRad = city.lon * DEG;
+
+  const d = THREE.MathUtils.clamp(camera.position.length(), 5, 9.5);
+  const camEnd = new THREE.Vector3(0, d * Math.sin(latRad), d * Math.cos(latRad));
+
+  let targetRot = -lonRad;
+  const cur = globeGroup.rotation.y;
+  targetRot += Math.round((cur - targetRot) / (Math.PI * 2)) * Math.PI * 2;
+
+  focusTween = {
+    t: 0,
+    rot0: cur,
+    rot1: targetRot,
+    cam0: camera.position.clone(),
+    cam1: camEnd,
+  };
+}
+
+function selectCity(id, focus = true){
+  state.selected = id;
+  const city = state.cities.find(c => c.id === id);
+  if (!city) return;
+
+  spinning = false;
+  document.getElementById('spinBtn').classList.remove('active');
+
+  if (focus) focusCity(city);
+
+  applyWeatherToScene(city);
+  renderCityList();
+  renderDetail();
+}
+
+/* =========================================================
+   API
+   ========================================================= */
+async function fetchWeather(city){
+  const url = 'https://api.open-meteo.com/v1/forecast'
+    + `?latitude=${city.lat}&longitude=${city.lon}`
+    + '&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,'
+    + 'precipitation,weather_code,wind_speed_10m,wind_direction_10m,pressure_msl'
+    + '&daily=weather_code,temperature_2m_max,temperature_2m_min'
+    + '&timezone=auto&forecast_days=6';
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Weather service unavailable');
+  return res.json();
+}
+
+async function geocode(query){
+  const url = 'https://geocoding-api.open-meteo.com/v1/search'
+    + `?name=${encodeURIComponent(query)}&count=6&language=en&format=json`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Search failed');
+  const data = await res.json();
+  return data.results || [];
+}
+
+/* =========================================================
+   LOADING CITIES
+   ========================================================= */
+async function loadCity(city){
+  try {
+    city.weather = await fetchWeather(city);
+    city.error = null;
+  } catch (e){
+    city.weather = null;
+    city.error = e.message || 'Error';
+  }
+}
+
+function addMarkerFor(city){
+  const m = createMarker(city);
+  updateMarkerColor(city);
+  return m;
+}
+
+function updateMarkerColor(city){
+  const m = markers.find(x => x.cityId === city.id);
+  if (!m || !city.weather) return;
+  const col = tempColor(city.weather.current.temperature_2m);
+  m.dot.material.color.copy(col);
+  m.ring.material.color.copy(col);
+}
+
+async function addCity({ name, country, lat, lon }, select = true){
+  const city = {
+    id: state.nextId++,
+    name, country, lat, lon,
+    weather: null,
+    error: null,
+  };
+  state.cities.push(city);
+  addMarkerFor(city);
+  renderCityList();
+
+  if (select) selectCity(city.id);
+
+  await loadCity(city);
+  updateMarkerColor(city);
+  renderCityList();
+  if (state.selected === city.id){
+    renderDetail();
+    applyWeatherToScene(city);
+  }
+  return city;
+}
+
+/* =========================================================
+   EVENTS
+   ========================================================= */
+// City list clicks
+cityListEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('.city-item');
+  if (!btn) return;
+  selectCity(Number(btn.dataset.id));
+});
+
+// Globe picking
+let pointerDown = null;
+
+canvas.addEventListener('pointerdown', (e) => {
+  pointerDown = { x: e.clientX, y: e.clientY };
+});
+
+canvas.addEventListener('pointerup', (e) => {
+  if (!pointerDown) return;
+  const moved = Math.hypot(e.clientX - pointerDown.x, e.clientY - pointerDown.y);
+  pointerDown = null;
+  if (moved > 6) return;
+
+  ndc.x =  (e.clientX / window.innerWidth)  * 2 - 1;
+  ndc.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(ndc, camera);
+  const hits = raycaster.intersectObjects(hitMeshes, false);
+
+  for (const hit of hits){
+    const worldPos = new THREE.Vector3();
+    hit.object.getWorldPosition(worldPos);
+    const outward = worldPos.clone().normalize();
+    const toCam = camera.position.clone().sub(worldPos).normalize();
+    if (outward.dot(toCam) <= 0.05) continue; // behind the globe
+
+    selectCity(hit.object.userData.cityId);
+    return;
+  }
+});
+
+controls.addEventListener('start', () => { focusTween = null; });
+
+// Search
+let searchTimer = null;
+
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  const q = searchInput.value.trim();
+  if (q.length < 2){ hideResults(); return; }
+  searchTimer = setTimeout(() => runSearch(q), 320);
+});
+
+async function runSearch(q){
+  try {
+    const results = await geocode(q);
+    if (!results.length){
+      searchResEl.innerHTML = `<div class="sr-item" style="cursor:default;color:#6a7ea8">No matches found</div>`;
+      searchResEl.classList.add('show');
+      return;
+    }
+    searchResEl.innerHTML = results.map((r, i) => `
+      <div class="sr-item" data-i="${i}">
+        <span>${esc(r.name)}</span>
+        <span class="sr-sub">${esc(r.admin1 ? r.admin1 + ', ' : '')}${esc(r.country || '')}</span>
+      </div>`).join('');
+    searchResEl.dataset.results = JSON.stringify(results);
+    searchResEl.classList.add('show');
+  } catch (err){
+    searchResEl.innerHTML = `<div class="sr-item" style="cursor:default;color:#6a7ea8">Search error</div>`;
+    searchResEl.classList.add('show');
+  }
+}
+
+searchResEl.addEventListener('click', async (e) => {
+  const item = e.target.closest('.sr-item');
+  if (!item || !item.dataset.i) return;
+  const results = JSON.parse(searchResEl.dataset.results || '[]');
+  const r = results[Number(item.dataset.i)];
+  if (!r) return;
+
+  hideResults();
+  searchInput.value = '';
+  searchInput.blur();
+
+  await addCity({
+    name: r.name,
+    country: r.country || '',
+    lat: r.latitude,
+    lon: r.longitude,
+  });
+});
+
+function hideResults(){
+  searchResEl.classList.remove('show');
+  searchResEl.innerHTML = '';
+}
+
+document.addEventListener('click', (e) => {
+  if (!searchForm.contains(e.target)) hideResults();
+});
+
+searchForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const q = searchInput.value.trim();
+  if (!q) return;
+  const results = await geocode(q).catch(() => []);
+  if (!results.length) return;
+  const r = results[0];
+  hideResults();
+  searchInput.value = '';
+  searchInput.blur();
+  await addCity({ name: r.name, country: r.country || '', lat: r.latitude, lon: r.longitude });
+});
+
+// Controls
+document.getElementById('spinBtn').addEventListener('click', (e) => {
+  spinning = !spinning;
+  focusTween = null;
+  e.currentTarget.classList.toggle('active', spinning);
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  focusTween = {
+    t: 0,
+    rot0: globeGroup.rotation.y,
+    rot1: globeGroup.rotation.y,
+    cam0: camera.position.clone(),
+    cam1: new THREE.Vector3(0, 2.4, 7.4),
+  };
+});
+
+// Resize
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+/* =========================================================
+   BOOT
+   ========================================================= */
+async function boot(){
+  // skeleton placeholders
+  cityListEl.innerHTML = Array.from({ length: 6 }, () => '<div class="skeleton"></div>').join('');
+
+  for (const c of DEFAULT_CITIES){
+    await addCity(c, false);
+  }
+
+  // pick the first city with valid data
+  const first = state.cities.find(c => c.weather) || state.cities[0];
+  if (first) selectCity(first.id);
+
+  animate();
+}
+
+boot();
+</script>
+</body>
+</html>
