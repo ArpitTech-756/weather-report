@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+
+  /* Tumhari photo */
+  background-image: url("w1.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  position: relative;
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* Grass video */
+.grass-video {
+  position: absolute;
+
+  bottom: 0;
+  left: 0;
+
+  width: 100vw;
+  height: 250px;
+
+  object-fit: contain;
+
+  /* Main trick */
+  mix-blend-mode: screen;
+
+  pointer-events: none;
+ 
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+
+  color: white;
+  padding: 100px 50px;
+}
+    </style>
+</head>
+<body>
+
+  <video class="grass-video" autoplay muted loop>
+    <source src="grass.mp4" type="video/mp4">
+  </video>
+
+  <div class="content">
+    <h1>Weather Website</h1>
+  </div>
+
+</body>
+</html>
