@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weatherly — The Future of Weather Intelligence</title>
+<meta name="description" content="Real-time weather intelligence, accurate forecasts, atmospheric insights, and global conditions.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%230b2015'/%3E%3Ccircle cx='32' cy='32' r='11' fill='%23b4f000'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,200;1,300;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="cloudshape" viewBox="0 0 240 100">
+      <ellipse cx="70" cy="70" rx="52" ry="26"/>
+      <circle cx="112" cy="46" r="36"/>
+      <circle cx="162" cy="58" r="30"/>
+      <ellipse cx="130" cy="74" rx="90" ry="22"/>
+      <ellipse cx="205" cy="72" rx="30" ry="20"/>
+    </symbol>
+
+    <linearGradient id="skyfar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9db6c4" stop-opacity=".62"/>
+      <stop offset="1" stop-color="#9db6c4" stop-opacity=".06"/>
+    </linearGradient>
+    <linearGradient id="skynear" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6d8d9b" stop-opacity=".7"/>
+      <stop offset="1" stop-color="#6d8d9b" stop-opacity=".08"/>
+    </linearGradient>
+
+    <g id="leafA">
+      <path d="M0 0C-62 -70 -72 -190 0 -300C72 -190 62 -70 0 0Z"/>
+      <path d="M0 0C30 -70 42 -190 0 -300C60 -190 50 -70 0 0Z" fill="rgba(255,255,255,.09)"/>
+      <path d="M0 -70L-38 -110M0 -70L38 -110M0 -130L-46 -175M0 -130L46 -175M0 -190L-34 -228M0 -190L34 -228" fill="none" stroke="rgba(255,255,255,.11)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M0 0V-286" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <g id="leafB">
+      <path d="M0 0C-24 -90 -28 -220 0 -340C28 -220 24 -90 0 0Z"/>
+      <path d="M0 0V-326" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+
+    <g id="clusterA">
+      <use href="#leafA" transform="translate(20 560) rotate(-22) scale(.9)"  fill="#1d4a34"/>
+      <use href="#leafB" transform="translate(40 560) rotate(-46) scale(1.05)" fill="#1a4631"/>
+      <use href="#leafA" transform="translate(120 560) rotate(-54) scale(.8)"  fill="#3a8055"/>
+      <use href="#leafA" transform="translate(90 560) rotate(-30) scale(1)"    fill="#25583c"/>
+      <use href="#leafB" transform="translate(150 560) rotate(-12) scale(1.18)" fill="#173c2b"/>
+      <use href="#leafA" transform="translate(70 560) rotate(2) scale(.72)"    fill="#42905f"/>
+      <use href="#leafA" transform="translate(200 560) rotate(12) scale(1.05)" fill="#2f6f49"/>
+      <use href="#leafB" transform="translate(250 560) rotate(32) scale(.9)"   fill="#214f38"/>
+    </g>
+    <g id="clusterB">
+      <use href="#leafB" transform="translate(500 560) rotate(40) scale(1)"     fill="#1a4631"/>
+      <use href="#leafA" transform="translate(440 560) rotate(28) scale(1.1)"   fill="#2a6544"/>
+      <use href="#leafA" transform="translate(400 560) rotate(50) scale(.78)"   fill="#3d8557"/>
+      <use href="#leafB" transform="translate(370 560) rotate(14) scale(1.2)"   fill="#183d2c"/>
+      <use href="#leafA" transform="translate(320 560) rotate(-6) scale(1)"     fill="#33774d"/>
+      <use href="#leafA" transform="translate(470 560) rotate(8) scale(.7)"     fill="#46955f"/>
+      <use href="#leafB" transform="translate(280 560) rotate(-26) scale(.85)"  fill="#204e37"/>
+    </g>
+  </defs>
+</svg>
+
+<div class="shell" id="shell" data-weather="partly" data-time="day">
+
+  <header class="nav" id="nav">
+    <a class="logo" href="#today" aria-label="Weatherly home">WEATHERLY</a>
+
+    <nav class="pill-nav" id="pillNav" aria-label="Primary">
+      <a href="#today" class="active">Today</a>
+      <a href="#forecast">Forecast</a>
+      <a href="#radar">Radar</a>
+      <a href="#air">Air Quality</a>
+      <a href="#cities">Cities</a>
+    </nav>
+
+    <div class="nav-actions">
+      <a class="btn-dark" href="#forecast">
+        <span>Explore Weather</span>
+        <span class="orb" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="pillNav">
+        <span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+ 
+  <section class="hero" id="today">
+
+    <div class="layer glowfield" aria-hidden="true"></div>
+    <div class="layer sun" aria-hidden="true"></div>
+    <div class="layer sky" aria-hidden="true">
+      <svg class="cloud c1" viewBox="0 0 240 100"><use href="#cloudshape"/></svg>
+      <svg class="cloud c2" viewBox="0 0 240 100"><use href="#cloudshape"/></svg>
+      <svg class="cloud c3" viewBox="0 0 240 100"><use href="#cloudshape"/></svg>
+      <svg class="cloud c4" viewBox="0 0 240 100"><use href="#cloudshape"/></svg>
+      <svg class="cloud c5" viewBox="0 0 240 100"><use href="#cloudshape"/></svg>
+    </div>
+
+    <div class="layer scene" aria-hidden="true">
+      <svg class="skyline" id="skyline" viewBox="0 0 1440 260" preserveAspectRatio="xMidYMax slice"></svg>
+      <div class="ground"></div>
+      <svg class="fol fol-l" viewBox="0 0 520 520"><use href="#clusterA"/></svg>
+      <svg class="fol fol-r" viewBox="0 0 520 520"><use href="#clusterB"/></svg>
+    </div>
+    <div class="layer fx" aria-hidden="true">
+      <div class="rain" id="fxRain"></div>
+      <div class="snow" id="fxSnow"></div>
+      <div class="fog"></div>
+      <div class="flash"></div>
+    </div>
+
+    <div class="hero-content">
+      <h1>The Future of Weather <em>Intelligence</em></h1>
+      <p class="lede">Real-time weather intelligence, accurate forecasts, atmospheric insights, and global conditions designed for a changing world.</p>
+
+      <div class="cta">
+        <form class="search" id="searchForm" autocomplete="off" role="search">
+          <svg class="s-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="searchInput" type="search" list="cityList" placeholder="Search city..." aria-label="Search city" spellcheck="false">
+          <datalist id="cityList"></datalist>
+          <button class="go" type="submit" aria-label="Search">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </form>
+
+        <a class="btn-lime" href="#radar">
+          <span class="orb" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="7" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" fill="#fff"/></svg>
+          </span>
+          <span>Live Radar</span>
+        </a>
+
+        <div class="unit" role="group" aria-label="Temperature unit">
+          <button type="button" data-unit="C" aria-pressed="true">°C</button>
+          <button type="button" data-unit="F" aria-pressed="false">°F</button>
+        </div>
+      </div>
+
+      <div class="meta">
+        <span class="m-loc">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+          <b id="metaLoc">Lucknow, India</b>
+        </span>
+        <span class="dotsep"></span>
+        <span class="m-live"><i class="live"></i><span id="updated">Updated just now</span></span>
+        <span class="dotsep"></span>
+        <span id="clock">—</span>
+      </div>
+
+      <div class="now" id="now">
+        <div class="now-icon" id="nowIcon"></div>
+        <div class="now-temp" id="tempVal">28°</div>
+        <div class="now-info">
+          <div class="now-cond" id="condText">Partly Cloudy</div>
+          <div class="now-loc" id="nowLoc">Lucknow, India</div>
+          <div class="now-feels">Feels like <b id="feelsVal">30°</b><span class="hl-pair" id="hiLo">H 31° · L 24°</span></div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <article class="glass gcard g-hum">
+          <div class="g-head"><span class="g-label">Humidity</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--lime)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>
+          </div>
+          <div class="g-value" id="humVal">68%</div>
+          <div class="viz"><div class="bars" id="humBars"></div></div>
+          <div class="g-foot"><span id="humState">Comfortable</span><b id="humDew">Dew 21°</b></div>
+        </article>
+
+        <article class="glass gcard g-wind">
+          <div class="g-head"><span class="g-label">Wind</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--lime)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/></svg>
+          </div>
+          <div class="g-value" id="windVal">14 km/h</div>
+          <div class="viz">
+            <svg class="windviz" viewBox="0 0 220 60" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M0 12C30 2 50 22 80 12S130 2 160 12S200 22 220 12"/>
+              <path d="M0 30C30 20 50 40 80 30S130 20 160 30S200 40 220 30"/>
+              <path d="M0 48C30 38 50 58 80 48S130 38 160 48S200 58 220 48"/>
+            </svg>
+          </div>
+          <div class="g-foot"><span id="windDir">NW</span><b id="windGust">Gusts 22 km/h</b></div>
+        </article>
+
+        <article class="glass gcard g-uv">
+          <div class="g-head"><span class="g-label">UV INDEX</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--lime)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+          </div>
+          <div class="g-value" id="uvVal">6</div>
+          <div class="viz"><div class="uvbar" id="uvBar"></div></div>
+          <div class="g-foot"><span id="uvState">High</span><b id="uvNote">of 11</b></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="section" id="forecast">
+    <div class="s-head reveal">
+      <div>
+        <span class="tag"><i></i>Forecast</span>
+        <h2 class="s-title">7-Day <em>Forecast</em></h2>
+      </div>
+      <p class="s-note" id="forecastNote">Daily highs, lows and chance of rain for Lucknow.</p>
+    </div>
+    <div class="daily reveal" id="dailyGrid"></div>
+
+    <div class="s-head sub reveal">
+      <div>
+        <h3 class="s-sub">Hourly <em>outlook</em></h3>
+      </div>
+      <p class="s-note">Next seven hours, local time.</p>
+    </div>
+    <div class="hours reveal" id="hourlyRow"></div>
+  </section>
+
+  <section class="section" id="air">
+    <div class="s-head reveal">
+      <div>
+        <span class="tag"><i></i>Atmosphere</span>
+        <h2 class="s-title">Weather <em>Intelligence</em></h2>
+      </div>
+      <p class="s-note">Air quality, visibility, pressure and daylight at a glance.</p>
+    </div>
+
+    <div class="intel reveal">
+      <article class="glass icard i-aqi">
+        <span class="i-label">Air Quality</span>
+        <div class="i-big">AQI <b id="aqiVal">72</b></div>
+        <div class="aqi-scale"><i id="aqiMarker"></i></div>
+        <div class="i-row"><strong id="aqiCat">Moderate</strong><span id="aqiNote">Acceptable for most people</span></div>
+      </article>
+
+      <article class="glass icard">
+        <span class="i-label">Visibility</span>
+        <div class="i-big"><b id="visVal">8.4</b> km</div>
+        <div class="vis-bar"><u id="visFill"></u></div>
+        <div class="i-row"><strong id="visNote">Good</strong></div>
+      </article>
+
+      <article class="glass icard">
+        <span class="i-label">Pressure</span>
+        <div class="i-big"><b id="presVal">1013</b> hPa</div>
+        <svg class="gauge" viewBox="0 0 120 64" aria-hidden="true">
+          <path class="g-track" d="M10 58A50 50 0 0 1 110 58"/>
+          <g id="presNeedle" class="g-needle"><line x1="60" y1="58" x2="60" y2="18"/><circle cx="60" cy="58" r="4"/></g>
+        </svg>
+        <div class="i-row"><strong id="presNote">Normal</strong></div>
+      </article>
+
+      <article class="glass icard">
+        <span class="i-label">Sunrise</span>
+        <div class="i-big"><b id="riseVal">6:02 AM</b></div>
+        <svg class="sunico" viewBox="0 0 64 28" aria-hidden="true"><path d="M8 26a24 24 0 0 1 48 0" fill="none" stroke="var(--lime)" stroke-width="2.5" stroke-linecap="round"/><path d="M4 26h56" stroke="rgba(255,255,255,.35)" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="14" r="4" fill="var(--lime)"/></svg>
+        <div class="i-row"><strong id="riseNote">Day length 12h 19m</strong></div>
+      </article>
+
+      <article class="glass icard">
+        <span class="i-label">Sunset</span>
+        <div class="i-big"><b id="setVal">6:21 PM</b></div>
+        <svg class="sunico" viewBox="0 0 64 28" aria-hidden="true"><path d="M8 26a24 24 0 0 1 48 0" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="1 6"/><path d="M4 26h56" stroke="rgba(255,255,255,.35)" stroke-width="2" stroke-linecap="round"/><circle cx="52" cy="14" r="4" fill="var(--lime)"/></svg>
+        <div class="i-row"><strong id="setNote">Golden hour 5:21 PM</strong></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="section" id="radar">
+    <div class="s-head reveal">
+      <div>
+        <span class="tag"><i></i>Live</span>
+        <h2 class="s-title">Weather <em>Radar</em></h2>
+      </div>
+      <p class="s-note">Sample radar view. Connect a tile provider to show real precipitation.</p>
+    </div>
+
+    <div class="glass radar reveal" id="radarCard" data-layer="rain">
+      <div class="r-map">
+        <div class="r-grid"></div>
+        <svg class="r-contours" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <path d="M-20 300C120 240 200 330 340 280S560 200 700 250 820 220 840 210"/>
+          <path d="M-20 340C130 290 220 370 350 325S570 250 700 296 820 270 840 262"/>
+          <path d="M-20 90C90 60 180 120 300 90S520 40 640 80 800 70 840 60"/>
+          <path d="M-20 130C100 100 190 160 310 130S530 84 650 122 810 112 840 104"/>
+        </svg>
+        <div class="r-blobs">
+          <i class="r-blob b1"></i><i class="r-blob b2"></i><i class="r-blob b3"></i><i class="r-blob b4"></i>
+        </div>
+        <div class="r-streaks" id="rStreaks"></div>
+        <div class="r-rings"><span></span><span></span><span></span><span></span></div>
+        <div class="r-sweep"></div>
+        <div class="r-marker"><i></i><b id="radarCity">Lucknow</b></div>
+        <span class="r-km k1">50 km</span><span class="r-km k2">100 km</span><span class="r-km k3">200 km</span>
+      </div>
+
+      <div class="r-top">
+        <span class="r-title"><i class="live"></i>Live conditions · 250 km range</span>
+        <div class="r-chips" role="group" aria-label="Radar layer">
+          <button type="button" class="r-chip active" data-layer="rain">Precipitation</button>
+          <button type="button" class="r-chip" data-layer="clouds">Clouds</button>
+          <button type="button" class="r-chip" data-layer="wind">Wind</button>
+        </div>
+      </div>
+
+      <div class="r-bottom">
+        <div class="r-stat"><span>Rain chance</span><b id="radarRain">10%</b></div>
+        <div class="r-stat"><span>Cloud cover</span><b id="radarCover">45%</b></div>
+        <div class="r-stat"><span>Wind</span><b id="radarWind">14 km/h</b></div>
+        <div class="r-legend"><span>Light</span><i></i><span>Heavy</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="cities">
+    <div class="s-head reveal">
+      <div>
+        <span class="tag"><i></i>Global</span>
+        <h2 class="s-title">Cities <em>Around the World</em></h2>
+      </div>
+      <p class="s-note">Select a city to load its conditions.</p>
+    </div>
+    <div class="cities reveal" id="cityGrid"></div>
+  </section>
+
+  <footer class="foot">
+    <div class="foot-row">
+      <span class="logo small">WEATHERLY</span>
+      <p>Sample data. Set <code>USE_LIVE_API</code> in script.js to load live conditions.</p>
+    </div>
+    <div class="foot-row">
+      <span class="foot-label">Preview a condition</span>
+      <div class="chips" id="previewChips" role="group" aria-label="Preview condition"></div>
+    </div>
+  </footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
